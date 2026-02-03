@@ -25,6 +25,10 @@ import {
   unref,
   computed,
   ComputedRef,
+  toRaw,
+  shallowRef,
+  markRaw,
+  triggerRef,
 } from "vue";
 
 export interface WalletContextState {
@@ -75,10 +79,10 @@ const initialState: {
   wallet: null,
 };
 
-const walletCore = ref<WalletCore>();
+const walletCore = shallowRef<WalletCore>();
 const state = ref(initialState);
-const wallets = ref<AdapterWallet[]>([]);
-const notDetectedWallets = ref<AdapterNotDetectedWallet[]>([]);
+const wallets = shallowRef<AdapterWallet[]>([]);
+const notDetectedWallets = shallowRef<AdapterNotDetectedWallet[]>([]);
 const autoConnect = ref(false);
 const isConnecting = ref(false);
 
@@ -208,45 +212,38 @@ export function useWallet(
   };
 
   const handleReadyStateChange = (updatedWallet: MaybeRef<AdapterWallet>) => {
-    const _updatedWallet = unref(updatedWallet);
-    const wallet = wallets.value.find(
-      (wallet) => wallet.name === _updatedWallet.name,
-    );
-    if (wallet) {
-      wallet.readyState = _updatedWallet.readyState;
+    const raw = unref(updatedWallet);
+    const idx = wallets.value.findIndex((w) => w.name === raw.name);
+    if (idx !== -1) {
+      wallets.value[idx].readyState = raw.readyState;
+      triggerRef(wallets);
     }
   };
 
   const handleStandardWalletsAdded = (
     standardWallet: MaybeRef<AdapterWallet>,
   ) => {
-    const _standardWallet = unref(standardWallet);
-
-    const existingWallet = wallets.value.find(
-      (wallet) => wallet.name == _standardWallet.name,
-    );
-
-    if (existingWallet) {
-      Object.assign(existingWallet, _standardWallet);
+    const raw = markRaw(unref(standardWallet));
+    const idx = wallets.value.findIndex((w) => w.name === raw.name);
+    if (idx !== -1) {
+      wallets.value[idx] = raw;
     } else {
-      wallets.value.push(_standardWallet);
+      wallets.value = [...wallets.value, raw];
     }
+    triggerRef(wallets);
   };
 
   const handleStandardNotDetectedWalletsAdded = (
     notDetectedWallet: MaybeRef<AdapterNotDetectedWallet>,
   ): void => {
-    const _notDetectedWallet = unref(notDetectedWallet);
-    // Manage current wallet state by removing optional duplications
-    // as new wallets are coming
-    const existingWallet = wallets.value.find(
-      (wallet) => wallet.name == _notDetectedWallet.name,
-    );
-    if (existingWallet) {
-      Object.assign(existingWallet, _notDetectedWallet);
+    const raw = markRaw(unref(notDetectedWallet));
+    const idx = notDetectedWallets.value.findIndex((w) => w.name === raw.name);
+    if (idx !== -1) {
+      notDetectedWallets.value[idx] = raw;
     } else {
-      notDetectedWallets.value.push(_notDetectedWallet);
+      notDetectedWallets.value = [...notDetectedWallets.value, raw];
     }
+    triggerRef(notDetectedWallets);
   };
 
   const handleConnect = () => {

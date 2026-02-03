@@ -1,4 +1,4 @@
-import { useWallet, WalletContextState } from "@aptos-labs/wallet-adapter-vue";
+import { useWallet, type WalletContextState } from "@aptos-labs/wallet-adapter-vue";
 import { Network } from "@aptos-labs/ts-sdk";
 import { useToast } from "~/components/ui/toast";
 import { useAutoConnect } from "~/composables/useAutoConnect";
@@ -29,10 +29,7 @@ export default defineNuxtPlugin({
 
     return {
       provide: {
-        walletAdapter: useWallet({
-          dappConfig,
-          onError: handleError,
-        }) as WalletContextState,
+        walletAdapter: walletAdapter as WalletContextState,
       },
     };
   },

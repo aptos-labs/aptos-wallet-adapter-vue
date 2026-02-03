@@ -11,7 +11,6 @@
   },
   "dependencies": {
     "@aptos-labs/ts-sdk": "^5.0.0",
-    "@aptos-labs/wallet-adapter-core": "^8.2.0",
     "@aptos-labs/wallet-adapter-vue": "workspace:*",
     "@aptos-labs/wallet-standard": "^0.5.2",
     "@nuxtjs/google-fonts": "^3.2.0",
