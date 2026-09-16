@@ -3,6 +3,10 @@ interface LinkProps {
   href?: string;
 }
 defineProps<LinkProps>();
+defineSlots<{
+  default?(props: Record<string, never>): any;
+  link?(props: Record<string, never>): any;
+}>();
 </script>
 
 <template>
