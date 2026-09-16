@@ -5,6 +5,10 @@ interface WalletItemProps {
   installLink: AdapterWallet["url"] | undefined;
 }
 defineProps<WalletItemProps>();
+defineSlots<{
+  installLink?(props: Record<string, never>): any;
+  name?(props: Record<string, never>): any;
+}>();
 </script>
 
 <template>
