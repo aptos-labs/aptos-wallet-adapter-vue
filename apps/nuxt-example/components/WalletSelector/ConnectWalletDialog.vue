@@ -8,7 +8,7 @@ import {
   AptosPrivacyPolicy,
 } from "@aptos-labs/wallet-adapter-vue";
 
-import { ChevronDown } from "lucide-vue-next";
+import { ChevronDown } from "@lucide/vue";
 import {
   CollapsibleRoot as Collapsible,
   CollapsibleTrigger,

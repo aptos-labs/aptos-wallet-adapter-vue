@@ -5,7 +5,7 @@ import {
   isAptosConnectWallet,
   truncateAddress,
 } from "@aptos-labs/wallet-adapter-vue";
-import { Copy, LogOut, User } from "lucide-vue-next";
+import { Copy, LogOut, User } from "@lucide/vue";
 import { DialogRoot as Dialog, DialogTrigger } from "radix-vue";
 
 import {

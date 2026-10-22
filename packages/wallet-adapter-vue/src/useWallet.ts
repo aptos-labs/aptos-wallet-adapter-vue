@@ -13,6 +13,7 @@ import {
   PendingTransactionResponse,
   InputSubmitTransactionData,
   AvailableWallets,
+  DappConfig,
   WalletCore,
   WalletCoreEvents,
 } from "@aptos-labs/wallet-adapter-core";
@@ -38,6 +39,7 @@ export interface WalletContextState {
   network: ComputedRef<NetworkInfo | null>;
   wallet: ComputedRef<AdapterWallet | null>;
   wallets?: Ref<ReadonlyArray<AdapterWallet>>;
+  hiddenWallets?: Ref<ReadonlyArray<AdapterWallet>>;
   notDetectedWallets?: Ref<ReadonlyArray<AdapterNotDetectedWallet>>;
   autoConnect: Ref<boolean>;
   connect(walletName: string): void;
@@ -61,7 +63,8 @@ export interface WalletContextState {
 export interface AptosWalletProviderProps {
   disableTelemetry?: boolean;
   optInWallets?: ReadonlyArray<AvailableWallets>;
-  dappConfig?: { network: Network };
+  hideWallets?: ReadonlyArray<AvailableWallets>;
+  dappConfig?: DappConfig;
   onError?: (error: any) => void;
 }
 
@@ -82,22 +85,26 @@ const initialState: {
 const walletCore = shallowRef<WalletCore>();
 const state = ref(initialState);
 const wallets = shallowRef<AdapterWallet[]>([]);
+const hiddenWallets = shallowRef<AdapterWallet[]>([]);
 const notDetectedWallets = shallowRef<AdapterNotDetectedWallet[]>([]);
 const autoConnect = ref(false);
 const isConnecting = ref(false);
 
 function getWalletCoreInstance(
   optInWallets: readonly AvailableWallets[] | undefined,
-  dappConfig: { network: Network } | undefined,
+  dappConfig: DappConfig | undefined,
   disableTelemetry: boolean | undefined,
+  hideWallets: readonly AvailableWallets[] | undefined,
 ) {
   if (!walletCore.value) {
     walletCore.value = new WalletCore(
       optInWallets ?? [],
       dappConfig,
       disableTelemetry,
+      hideWallets,
     );
     Object.assign(wallets.value, walletCore.value.wallets);
+    Object.assign(hiddenWallets.value, walletCore.value.hiddenWallets);
   }
   return walletCore.value;
 }
@@ -111,12 +118,14 @@ function getWalletCoreInstance(
 export function useWallet(
   props?: AptosWalletProviderProps,
 ): WalletContextState {
-  const { disableTelemetry, optInWallets, dappConfig, onError } = props ?? {};
+  const { disableTelemetry, optInWallets, hideWallets, dappConfig, onError } =
+    props ?? {};
 
   const walletCoreInstance = getWalletCoreInstance(
     optInWallets,
     dappConfig,
     disableTelemetry,
+    hideWallets,
   );
 
   const connect = async (walletName: string) => {
@@ -233,6 +242,19 @@ export function useWallet(
     triggerRef(wallets);
   };
 
+  const handleStandardWalletsHiddenAdded = (
+    standardWallet: MaybeRef<AdapterWallet>,
+  ) => {
+    const raw = markRaw(unref(standardWallet));
+    const idx = hiddenWallets.value.findIndex((w) => w.name === raw.name);
+    if (idx !== -1) {
+      hiddenWallets.value[idx] = raw;
+    } else {
+      hiddenWallets.value = [...hiddenWallets.value, raw];
+    }
+    triggerRef(hiddenWallets);
+  };
+
   const handleStandardNotDetectedWalletsAdded = (
     notDetectedWallet: MaybeRef<AdapterNotDetectedWallet>,
   ): void => {
@@ -311,6 +333,7 @@ export function useWallet(
     accountChange: handleAccountChange,
     networkChange: handleNetworkChange,
     standardWalletsAdded: handleStandardWalletsAdded,
+    standardWalletsHiddenAdded: handleStandardWalletsHiddenAdded,
     standardNotDetectedWalletAdded: handleStandardNotDetectedWalletsAdded,
   };
 
@@ -325,6 +348,7 @@ export function useWallet(
     }
     walletCore.value = undefined;
     wallets.value = [];
+    hiddenWallets.value = [];
     Object.assign(state.value, initialState);
   });
 
@@ -381,6 +405,7 @@ export function useWallet(
     network: computed(() => state.value.network),
     wallet: computed(() => state.value.wallet),
     wallets,
+    hiddenWallets,
     autoConnect,
     connect,
     disconnect,
